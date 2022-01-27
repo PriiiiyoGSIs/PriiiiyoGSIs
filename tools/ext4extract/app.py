@@ -59,13 +59,12 @@ class Application(object):
             processed = False
             if de.type == 1:  # regular file
                 data, atime, mtime = self._ext4.read_file(de.inode)
-                file = open(os.path.join(path, de.name), 'w+b')
-                file.write(data)
-                file.close()
+                with open(os.path.join(path, de.name), 'w+b') as file:
+                    file.write(data)
                 os.utime(file.name, (atime, mtime))
                 processed = True
             elif de.type == 2:  # directory
-                if de.name == '.' or de.name == '..':
+                if de.name in ['.', '..']:
                     continue
                 self._extract_dir(self._ext4.read_dir(de.inode), path, de.name)
             elif de.type == 7:  # symlink
@@ -74,9 +73,8 @@ class Application(object):
                 link = os.path.join(path, de.name)
                 link_to = self._ext4.read_link(de.inode)
                 if self._args.text_symlinks:
-                    link = open(link, "w+b")
-                    link.write(link_to.encode('utf-8'))
-                    link.close()
+                    with open(link, "w+b") as link:
+                        link.write(link_to.encode('utf-8'))
                 elif self._args.empty_symlinks:
                     open(link, "w+").close()
                 else:

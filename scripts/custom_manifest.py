@@ -20,13 +20,12 @@ import sys
 def main(argv):
     original_file = 'manifest.xml'
 
-    if len(argv) == 4:
-        output_file_path = argv[1]
-        override_file_path = argv[2]
-        original_file = argv[3]
-    else:
+    if len(argv) != 4:
         raise ValueError("Wrong number of arguments %s" % len(argv))
 
+    output_file_path = argv[1]
+    override_file_path = argv[2]
+    original_file = argv[3]
     fallbackPlaceholderFound = False
     with open(original_file, 'r') as input_file:
         with open(output_file_path, 'w') as output_file:
