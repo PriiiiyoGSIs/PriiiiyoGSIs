@@ -32,12 +32,11 @@ class Ext4(object):
     def __str__(self):
         if self._superblock is None:
             return "Not loaded"
-        else:
-            volume_name = self._superblock.s_volume_name.decode('utf-8').rstrip('\0')
-            mounted_at = self._superblock.s_last_mounted.decode('utf-8').rstrip('\0')
-            if not mounted_at:
-                mounted_at = "not mounted"
-            return "Volume name: {}, last mounted at: {}".format(volume_name, mounted_at)
+        volume_name = self._superblock.s_volume_name.decode('utf-8').rstrip('\0')
+        mounted_at = self._superblock.s_last_mounted.decode('utf-8').rstrip('\0')
+        if not mounted_at:
+            mounted_at = "not mounted"
+        return "Volume name: {}, last mounted at: {}".format(volume_name, mounted_at)
 
     def _read_group_descriptor(self, bg_num):
         gd_offset = (self._superblock.s_first_data_block + 1) * self._block_size \
@@ -60,7 +59,7 @@ class Ext4(object):
         if hdr.eh_magic != 0xf30a:
             raise RuntimeError("Bad extent magic")
 
-        for eex in range(0, hdr.eh_entries):
+        for eex in range(hdr.eh_entries):
             raw_offset = 12 + (eex * 12)
             entry_raw = extent_block[raw_offset:raw_offset + 12]
             if hdr.eh_depth == 0:
@@ -105,7 +104,7 @@ class Ext4(object):
     def read_dir(self, inode_num):
         inode = self._read_inode(inode_num)
         dir_raw = self._read_data(inode)
-        dir_data = list()
+        dir_data = []
         offset = 0
         while offset < len(dir_raw):
             entry_raw = dir_raw[offset:offset + 8]
@@ -117,20 +116,20 @@ class Ext4(object):
                 dir_entry = make_dir_entry(entry_raw)
                 entry_inode = self._read_inode(dir_entry.inode)
                 inode_type = entry_inode.i_mode & 0xf000
-                if inode_type == 0x1000:
-                    entry.type = 5
-                elif inode_type == 0x2000:
-                    entry.type = 3
-                elif inode_type == 0x4000:
+                if inode_type == 0x4000:
                     entry.type = 2
                 elif inode_type == 0x6000:
                     entry.type = 4
                 elif inode_type == 0x8000:
                     entry.type = 1
+                elif inode_type == 0x1000:
+                    entry.type = 5
                 elif inode_type == 0xA000:
                     entry.type = 7
                 elif inode_type == 0xC000:
                     entry.type = 6
+                elif inode_type == 0x2000:
+                    entry.type = 3
             entry.inode = dir_entry.inode
             entry.name = dir_raw[offset + 8:offset + 8 + dir_entry.name_len].decode('utf-8')
             dir_data.append(entry)
